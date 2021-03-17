@@ -26,6 +26,8 @@ namespace Bicep.LangServer.IntegrationTests
 {
     public static class IntegrationTestHelper
     {
+        private const int DefaultTimeout = 20000;
+
         public static readonly ISnippetsProvider SnippetsProvider = new SnippetsProvider();
 
         public static async Task<ILanguageClient> StartServerWithClientConnectionAsync(Action<LanguageClientOptions> onClientOptions, IResourceTypeProvider? resourceTypeProvider = null, IFileResolver? fileResolver = null)
@@ -61,7 +63,7 @@ namespace Bicep.LangServer.IntegrationTests
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "Not an issue in test code.")]
-        public static async Task<T> WithTimeoutAsync<T>(Task<T> task, int timeout = 10000)
+        public static async Task<T> WithTimeoutAsync<T>(Task<T> task, int timeout = DefaultTimeout)
         {
             var completed = await Task.WhenAny(
                 task,
@@ -77,7 +79,7 @@ namespace Bicep.LangServer.IntegrationTests
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "Not an issue in test code.")]
-        public static async Task EnsureTaskDoesntCompleteAsync<T>(Task<T> task, int timeout = 10000)
+        public static async Task EnsureTaskDoesntCompleteAsync<T>(Task<T> task, int timeout = DefaultTimeout)
         {
             var completed = await Task.WhenAny(
                 task,
