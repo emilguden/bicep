@@ -51,7 +51,7 @@ namespace Bicep.LangServer.IntegrationTests
             const string expectedSetName = "declarations";
             var uri = DocumentUri.From($"/{this.TestContext.TestName}");
 
-            using var client = await IntegrationTestHelper.StartServerWithTextAsync(string.Empty, uri);
+            using var client = await IntegrationTestHelper.StartServerWithTextAsync(this.TestContext, string.Empty, uri);
 
             var actual = await GetActualCompletions(client, uri, new Position(0, 0));
             var actualLocation = FileHelper.SaveResultFile(this.TestContext, $"{this.TestContext.TestName}_{expectedSetName}", actual.ToString(Formatting.Indented));
@@ -114,6 +114,7 @@ namespace Bicep.LangServer.IntegrationTests
             var syntaxTree = SyntaxTree.Create(documentUri.ToUri(), placeholderFile);
 
             var client = await IntegrationTestHelper.StartServerWithTextAsync(
+                this.TestContext,
                 placeholderFile,
                 documentUri,
                 null,
@@ -168,7 +169,7 @@ namespace Bicep.LangServer.IntegrationTests
 
             var uri = DocumentUri.FromFileSystemPath(entryPoint);
 
-            using var client = await IntegrationTestHelper.StartServerWithTextAsync(dataSet.Bicep, uri, resourceTypeProvider: TypeProvider, fileResolver: new FileResolver());
+            using var client = await IntegrationTestHelper.StartServerWithTextAsync(this.TestContext, dataSet.Bicep, uri, resourceTypeProvider: TypeProvider, fileResolver: new FileResolver());
 
             var intermediate = new List<(Position position, JToken actual)>();
 
@@ -193,7 +194,7 @@ hel|lo
 '''|
 ";
 
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -203,7 +204,7 @@ hel|lo
 var interpolatedString = 'abc${|true}def${|}ghi${res|}xyz'
 ";
 
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsNonEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsNonEmpty);
         }
 
         [TestMethod]
@@ -214,7 +215,7 @@ var test = |// comment here
 var test2 = |/* block comment */|
 ";
 
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsNonEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsNonEmpty);
         }
 
         [TestMethod]
@@ -230,7 +231,7 @@ resource testRes 'Test.Rp/readWriteTests@2020-01-01' = {|
 output baz object = {|
 ";
 
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -241,7 +242,7 @@ var test = /|/ comment here|
 var test2 = /|* block c|omment *|/
 ";
 
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -250,7 +251,7 @@ var test2 = /|* block c|omment *|/
             string text = "resource aksCluster 'Microsoft.ContainerService/managedClusters@2021-03-01' existing = ";
 
             var syntaxTree = SyntaxTree.Create(new Uri("file:///main.bicep"), text);
-            using var client = await IntegrationTestHelper.StartServerWithTextAsync(text, syntaxTree.FileUri, resourceTypeProvider: TypeProvider);
+            using var client = await IntegrationTestHelper.StartServerWithTextAsync(this.TestContext, text, syntaxTree.FileUri, resourceTypeProvider: TypeProvider);
 
             var completions = await client.RequestCompletion(new CompletionParams
             {
@@ -291,7 +292,7 @@ var test2 = /|* block c|omment *|/
             string text = @"resource aksCluster 'Microsoft.ContainerService/managedClusters@2021-03-01' = ";
 
             var syntaxTree = SyntaxTree.Create(new Uri("file:///main.bicep"), text);
-            using var client = await IntegrationTestHelper.StartServerWithTextAsync(text, syntaxTree.FileUri, resourceTypeProvider: TypeProvider);
+            using var client = await IntegrationTestHelper.StartServerWithTextAsync(this.TestContext, text, syntaxTree.FileUri, resourceTypeProvider: TypeProvider);
 
             var completions = await client.RequestCompletion(new CompletionParams
             {
@@ -335,7 +336,7 @@ var test2 = /|* block c|omment *|/
         {
             string text = @"resource deploymentScripts 'Microsoft.Resources/deploymentScripts@2020-10-01'=";
             var syntaxTree = SyntaxTree.Create(new Uri("file:///main.bicep"), text);
-            using var client = await IntegrationTestHelper.StartServerWithTextAsync(text, syntaxTree.FileUri, resourceTypeProvider: TypeProvider);
+            using var client = await IntegrationTestHelper.StartServerWithTextAsync(this.TestContext, text, syntaxTree.FileUri, resourceTypeProvider: TypeProvider);
 
             var completions = await client.RequestCompletion(new CompletionParams
             {
@@ -413,7 +414,7 @@ output string test = testRes.|
 output string test2 = testRes.properties.|
 ";
 
-            await RunCompletionScenarioTest(fileWithCursors, completions =>
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, completions =>
                 completions.Should().SatisfyRespectively(
                     x => x!.OrderBy(d => d.SortText).Should().SatisfyRespectively(
                         d => d.Documentation!.MarkupContent!.Value.Should().Contain("This is a property which supports reading AND writing!"),
@@ -465,7 +466,7 @@ resource testRes5 'Test.Rp/readWriteTests@2020-01-01' |= {
             }
 
 
-            await RunCompletionScenarioTest(fileWithCursors, completions =>
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, completions =>
                 completions.Should().SatisfyRespectively(
                     x => x!.OrderBy(d => d.SortText).Should().SatisfyRespectively(d => AssertExistingKeywordCompletion(d)),
                     x => x!.OrderBy(d => d.SortText).Should().SatisfyRespectively(d => AssertExistingKeywordCompletion(d)),
@@ -493,7 +494,7 @@ resource testRes2 'Test.Rp/readWriteTests@2020-01-01' = {
                     .OnlyContain(x => string.Equals(x.TextEdit!.TextEdit!.NewText, x.Label + ':'));
             }
 
-            await RunCompletionScenarioTest(fileWithCursors, completions =>
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, completions =>
                 completions.Should().SatisfyRespectively(
                     l => AssertPropertyNameCompletionsWithColons(l!),
                     l => AssertPropertyNameCompletionsWithColons(l!)));
@@ -519,10 +520,10 @@ resource testRes3 'Test.Rp/readWriteTests@2020-01-01' = {
 }
 ";
 
-            await RunCompletionScenarioTest( fileWithCursors, completions =>
-                completions.Should().SatisfyRespectively(
-                    l => AssertPropertyNameCompletionsWithoutColons(l!),
-                    l => AssertPropertyNameCompletionsWithoutColons(l!)));
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, completions =>
+               completions.Should().SatisfyRespectively(
+                   l => AssertPropertyNameCompletionsWithoutColons(l!),
+                   l => AssertPropertyNameCompletionsWithoutColons(l!)));
         }
 
         [TestMethod]
@@ -536,7 +537,7 @@ resource myRes 'Test.Rp/readWriteTests@2020-01-01' = {|
   }
 |}
 ";
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -549,7 +550,7 @@ resource myRes 'Test.Rp/readWriteTests@2020-01-01' = {|
   name: 'myRes'
 }
 ";
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -567,7 +568,7 @@ var obj6 = { |
   prop  | : false
  |  }
 ";
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -586,7 +587,7 @@ var arr6 = [ |
   |  true
 | ]
 ";
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -597,7 +598,7 @@ var unary = |! | true
 var binary = -1 | |+| | 2
 var ternary = true | |?| | 'yes' | |:| | 'no'
 ";
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
         [TestMethod]
@@ -608,14 +609,14 @@ var booleanExp = !|tr|ue| && |fal|se|
 var integerExp = |12|345| + |543|21|
 var nullLit = |n|ull|
 ";
-            await RunCompletionScenarioTest(fileWithCursors, AssertAllCompletionsEmpty);
+            await RunCompletionScenarioTest(TestContext, fileWithCursors, AssertAllCompletionsEmpty);
         }
 
-        private static async Task RunCompletionScenarioTest(string fileWithCursors, Action<IEnumerable<CompletionList?>> assertAction)
+        private static async Task RunCompletionScenarioTest(TestContext testContext, string fileWithCursors, Action<IEnumerable<CompletionList?>> assertAction)
         {
             var (file, cursors) = ParserHelper.GetFileWithCursors(fileWithCursors);
             var syntaxTree = SyntaxTree.Create(new Uri("file:///path/to/main.bicep"), file);
-            var client = await IntegrationTestHelper.StartServerWithTextAsync(file, syntaxTree.FileUri, resourceTypeProvider: BuiltInTestTypes.Create());
+            var client = await IntegrationTestHelper.StartServerWithTextAsync(testContext, file, syntaxTree.FileUri, resourceTypeProvider: BuiltInTestTypes.Create());
             var completions = await RequestCompletions(client, syntaxTree, cursors);
 
             assertAction(completions);
