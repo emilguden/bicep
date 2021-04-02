@@ -22,6 +22,7 @@ using Bicep.Core.FileSystem;
 using Bicep.Core.Navigation;
 using Bicep.LanguageServer.Snippets;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
+using System.Linq;
 
 namespace Bicep.LangServer.IntegrationTests
 {
@@ -109,7 +110,11 @@ namespace Bicep.LangServer.IntegrationTests
                 options =>
                 {
                     onClientOptions?.Invoke(options);
-                    options.OnPublishDiagnostics(p => diagnosticsPublished.SetResult(p));
+                    options.OnPublishDiagnostics(p =>
+                    {
+                        testContext.WriteLine($"Received {p.Diagnostics.Count()} diagnostic(s).");
+                        diagnosticsPublished.SetResult(p);
+                    });
                 },
                 resourceTypeProvider: resourceTypeProvider,
                 fileResolver: fileResolver);
