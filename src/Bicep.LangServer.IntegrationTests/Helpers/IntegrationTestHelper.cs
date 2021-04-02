@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Bicep.Core.FileSystem;
 using Bicep.Core.Navigation;
 using Bicep.LanguageServer.Snippets;
+using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 
 namespace Bicep.LangServer.IntegrationTests
 {
@@ -56,7 +57,9 @@ namespace Bicep.LangServer.IntegrationTests
                     .WithOutput(serverPipe.Writer)
                     .OnInitialize((client, request, cancellationToken) => { testContext.WriteLine("Language client initializing."); return Task.CompletedTask; })
                     .OnInitialized((client, request, response, cancellationToken) => { testContext.WriteLine("Language client initialized."); return Task.CompletedTask; })
-                    .OnStarted((client, cancellationToken) => { testContext.WriteLine("Language client started."); return Task.CompletedTask; });
+                    .OnStarted((client, cancellationToken) => { testContext.WriteLine("Language client started."); return Task.CompletedTask; })
+                    .OnLogTrace(@params => testContext.WriteLine($"TRACE: {@params.Message} VERBOSE: {@params.Verbose}"))
+                    .OnLogMessage(@params => testContext.WriteLine($"{@params.Type}: {@params.Message}"));
 
                 onClientOptions(options);
             });
