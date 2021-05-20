@@ -30,7 +30,7 @@ namespace Bicep.LangServer.IntegrationTests
 {
     public static class IntegrationTestHelper
     {
-        private const int DefaultTimeout = 20000;
+        private const int DefaultTimeout = 10000;
 
         public static readonly ISnippetsProvider SnippetsProvider = new SnippetsProvider();
 
@@ -70,7 +70,9 @@ namespace Bicep.LangServer.IntegrationTests
 
             testContext.WriteLine("LanguageClient initialize finished.");
 
-            var status = await client.SendRequest(new BicepStatusParams(), default);
+            var tokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+
+            var status = await client.SendRequest(new BicepStatusParams(), tokenSource.Token);
             status.Should().NotBeNull();
             status!.Pid.Should().Be(Environment.ProcessId);
 
