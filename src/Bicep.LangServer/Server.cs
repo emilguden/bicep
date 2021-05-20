@@ -52,6 +52,7 @@ namespace Bicep.LanguageServer
             server = OmnisharpLanguageServer.PreInit(options =>
             {
                 options
+                    .WithHandler<BicepStatusHandler>()
                     .WithHandler<BicepTextDocumentSyncHandler>()
                     .WithHandler<BicepDocumentSymbolHandler>()
                     .WithHandler<BicepDefinitionHandler>()

@@ -23,6 +23,8 @@ using Bicep.Core.Navigation;
 using Bicep.LanguageServer.Snippets;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using System.Linq;
+using Bicep.LanguageServer.Handlers;
+using FluentAssertions;
 
 namespace Bicep.LangServer.IntegrationTests
 {
@@ -67,6 +69,10 @@ namespace Bicep.LangServer.IntegrationTests
             await client.Initialize(CancellationToken.None);
 
             testContext.WriteLine("LanguageClient initialize finished.");
+
+            var status = await client.SendRequest(new BicepStatusParams(), default);
+            status.Should().NotBeNull();
+            status!.Pid.Should().Be(Environment.ProcessId);
 
             return client;
         }
